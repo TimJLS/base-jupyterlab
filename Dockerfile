@@ -1,15 +1,25 @@
-FROM jupyter/scipy-notebook
+FROM jupyter/scipy-notebook:python-3.8.8
+ARG USER=maker
+ENV NODE_OPTIONS="--max-old-space-size=4096" \
+    HOME="/home/${USER}"
 
-ARG HTTP_PROXY="http://10.40.40.245:3128"
-COPY apt.conf /etc/apt/apt.conf
-ENV NODE_OPTIONS="--max-old-space-size=4096"
+USER root
 
-RUN pip config set "global.proxy" ${HTTP_PROXY}
-RUN pip install --upgrade jupyterlab-git
-RUN pip install tableauserverclient
+RUN useradd -ms /bin/bash $USER
+WORKDIR "${HOME}"
 
-RUN npm config set proxy ${HTTP_PROXY}
-RUN npm config set https-proxy ${HTTP_PROXY}
+RUN sudo -E apt-get -y update && \
+    sudo -E apt-get -y upgrade && \
+    sudo -E apt-get install -qq -y curl gnupg vim
+RUN sudo -E curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+RUN sudo -E curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list > /etc/apt/sources.list.d/mssql-release.list
+RUN sudo -E apt-get -y update
+RUN sudo -E ACCEPT_EULA=Y apt-get install -y msodbcsql17
+RUN sudo -E apt-get install -y g++ libboost-all-dev unixodbc-dev python-dev && pip install turbodbc
+
+RUN conda install -c conda-forge pyodbc pycrypto
+RUN pip install pymssql tableauserverclient jupyterlab-git
+
 
 RUN jupyter labextension install nbdime-jupyterlab --no-build
 RUN jupyter labextension install @jupyterlab/git --no-build
@@ -22,32 +32,16 @@ RUN jupyter lab build && \
     fix-permissions $CONDA_DIR $HOME
 RUN jupyter server extension list
 
-#sql driver install
-USER root
+USER maker
 
-RUN sudo apt-get -y update
-RUN sudo apt-get -y upgrade
-RUN sudo apt-get install -y curl
-RUN sudo apt-get install -y gnupg
-RUN sudo curl -x ${HTTP_PROXY} https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
-RUN sudo curl -x ${HTTP_PROXY} https://packages.microsoft.com/config/ubuntu/20.04/prod.list > /etc/apt/sources.list.d/mssql-release.list
-RUN sudo apt-get -y update
-RUN sudo ACCEPT_EULA=Y apt-get install -y msodbcsql17
+# # Airflow
+# ARG AIRFLOW_DEPS=""
+# ARG AIRFLOW_VERSION=2.1.0
+# ARG PYTHON_VERSION=$(python3 --version | cut -d " " -f 2 | cut -d "." -f 1-2)
+# ARG CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
+# RUN sudo -E apt-get install -y python3-dev default-libmysqlclient-dev build-essential libffi-dev
+# RUN sudo -E apt-get install -y libsasl2-dev
+# RUN pip install "apache-airflow[async,amazon,celery,cncf.kubernetes,docker,dask,elasticsearch,ftp,grpc,hashicorp,http,ldap,google,microsoft.azure,mysql,post,postgres,redis,sendgrid,sftp,slack,ssh,statsd,virtualenv]==1.10.14" \
+# --constraint  "${CONSTRAINT_URL}"
 
-RUN conda config --set proxy_servers.http ${HTTP_PROXY}
-RUN conda config --set proxy_servers.https ${HTTP_PROXY}
-RUN conda install -y -c conda-forge pyodbc
-RUN conda install -y -c conda-forge pycrypto
-RUN conda install -y -c anaconda pymssql
-RUN conda install -y -c conda-forge turbodbc
-# Airflow
-ARG AIRFLOW_DEPS=""
-ARG AIRFLOW_VERSION=1.10.14
-ARG PYTHON_VERSION=3.8
-ARG CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
-RUN sudo apt-get install -y python3-dev default-libmysqlclient-dev build-essential libffi-dev
-RUN sudo apt-get install -y libsasl2-dev
-RUN pip install "apache-airflow[async,amazon,celery,cncf.kubernetes,docker,dask,elasticsearch,ftp,grpc,hashicorp,http,ldap,google,microsoft.azure,mysql,post,postgres,redis,sendgrid,sftp,slack,ssh,statsd,virtualenv]==1.10.14" \
---constraint  "${CONSTRAINT_URL}"
-
-RUN pip install tornado==6.1
+# RUN pip install tornado==6.1
