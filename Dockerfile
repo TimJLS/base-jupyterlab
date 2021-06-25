@@ -1,11 +1,12 @@
 FROM jupyter/scipy-notebook:python-3.8.8
 ARG USER=maker
 ENV NODE_OPTIONS="--max-old-space-size=4096" \
-    HOME="/home/${USER}"
+    HOME="/home/${USER}/projects"
 
 USER root
 
 RUN useradd -ms /bin/bash $USER
+RUN mkdir ${HOME}
 WORKDIR "${HOME}"
 
 RUN sudo -E apt-get -y update && \
