@@ -2,7 +2,7 @@ FROM jupyter/scipy-notebook:python-3.8.8
 #RUN export python_version=$(python --version | cut -d " " -f 2 | cut -d "." -f -2)
 #RUN echo $PYTHON_VERSION
 ENV CURRENT_VERSION="1.0.2" \
-    PYTHON_VERSION="$3.8" \
+    PYTHON_VERSION="3.8" \
     NB_USER="maker" \
     NODE_OPTIONS="--max-old-space-size=4096" \
     HOME="/home/${NB_USER}/projects"
