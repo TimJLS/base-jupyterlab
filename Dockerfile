@@ -9,8 +9,7 @@ ENV HOME="/home/${NB_USER}/projects"
 
 USER root
 
-RUN mkdir /home/${NB_USER}
-RUN useradd -ms /bin/bash $NB_USER && \
+RUN mkdir /home/${NB_USER} && \
     sudo -E apt-get -y update && \
     sudo -E apt-get -y upgrade && \
     sudo -E apt-get install -qq -y --no-install-recommends curl gnupg vim && \
