@@ -3,13 +3,12 @@ FROM jupyter/scipy-notebook:python-3.8.8
 #RUN echo $PYTHON_VERSION
 ENV CURRENT_VERSION="1.0.2" \
     PYTHON_VERSION="3.8" \
-    NB_USER="maker" \
-    NODE_OPTIONS="--max-old-space-size=4096"
-ENV HOME="/home/${NB_USER}/projects"
+    NODE_OPTIONS="--max-old-space-size=4096" \
+    HOME="/home/${NB_USER}/projects"
 
 USER root
 
-RUN mkdir /home/${NB_USER} && \
+RUN mkdir $HOME && \
     sudo -E apt-get -y update && \
     sudo -E apt-get -y upgrade && \
     sudo -E apt-get install -qq -y --no-install-recommends curl gnupg vim && \
@@ -29,8 +28,7 @@ RUN mkdir /home/${NB_USER} && \
         npm cache clean --force && \
         rm -rf $HOME/.node-gyp && \
         rm -rf $HOME/.local && \
-    fix-permissions $CONDA_DIR $HOME && \
-    chmod -R 777 /home/${NB_USER}
+    fix-permissions $CONDA_DIR $HOME
 
 USER "${NB_USER}"
 WORKDIR "${HOME}"
